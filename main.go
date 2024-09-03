@@ -27,7 +27,7 @@ func LoadConfig(path string) (config Config, err error) {
 	return
 }
 
-// "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"
+// ""
 type RiderPull struct {
 	ID     int64    `json:"id,omitempty"`
 	State  string   `json:"state,omitempty"`
