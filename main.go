@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	ridehub "github.com/Suraj1089/ridehub/pkg"
+	"github.com/google/go-github/v64/github"
 	"github.com/joho/godotenv"
 )
 
@@ -18,10 +18,16 @@ func main() {
 	}
 
 	rider := ridehub.GetRiderClient()
-
-	pulls, err := rider.GetPullLabels(ctx, "Suraj1089", "SPPU-RESULT-CONVERTER", 24)
-	if err != nil {
-		fmt.Println(strings.Split(err.Error(), ":")[2])
+	newPR := &github.NewPullRequest{
+		Title:               github.String("Update file Name"),
+		Head:                github.String("main"),
+		Base:                github.String("ridehub"),
+		Body:                github.String("Body of pr"),
+		MaintainerCanModify: github.Bool(true),
 	}
-	fmt.Println(pulls)
+	pr, err := rider.CreatePull(ctx, "Suraj1089", "SPPU-Result-Convertor", newPR)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(pr)
 }

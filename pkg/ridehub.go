@@ -2,6 +2,7 @@ package ridehub
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/google/go-github/v64/github"
@@ -30,6 +31,7 @@ type RiderClient struct {
 	PullRequests *github.PullRequestsService
 	Users        *github.UsersService
 	Teams        *github.TeamsService
+	GitService   *github.GitService
 }
 
 func GetRiderClient() *RiderClient {
@@ -124,4 +126,76 @@ func (rider *RiderClient) RemoveLabelFromPull(ctx context.Context, owner string,
 		return nil, err
 	}
 	return labels, nil
+}
+
+func (rider *RiderClient) CreatePull(ctx context.Context, owner string, repoName string, pull *github.NewPullRequest) (*int, error) {
+	featureBranch := pull.Base
+	fmt.Println(*featureBranch)
+	ref, _, err := rider.GitService.GetRef(ctx, owner, repoName, *featureBranch)
+	fmt.Println("ref is ")
+	if err != nil {
+		fmt.Println("returning err")
+		return nil, err
+	}
+	fmt.Printf("ref = %s", ref)
+	if err != nil {
+		featureBranchUrl, err := rider.CreateBranch(ctx, owner, repoName, *pull.Head, *featureBranch)
+		if err != nil {
+			return nil, err
+		}
+		fmt.Println(featureBranchUrl)
+	}
+	return nil, nil
+	// pr, _, err := rider.PullRequests.Create(ctx, owner, repoName, pull)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// return pr.Number, nil
+}
+
+func (rider *RiderClient) CreateBranch(ctx context.Context, owner string, repoName string, baseBranch string, featureBranch string) (*string, error) {
+	ref := "refs/heads/" + baseBranch
+	baseRef, _, err := rider.GitService.GetRef(ctx, owner, repoName, ref)
+	if err != nil {
+		return nil, nil
+	}
+	reference := &github.Reference{
+		Ref:    github.String("refs/heads/" + baseBranch),
+		Object: &github.GitObject{SHA: baseRef.Object.SHA},
+	}
+	newRef, _, err := rider.GitService.CreateRef(ctx, owner, repoName, reference)
+
+	if err != nil {
+		return nil, err
+	}
+	return newRef.URL, nil
+}
+
+type RefService struct {
+	GitService *github.GitService
+}
+
+func (b *RefService) GetRef(ctx context.Context, owner string, repo string, baseRefName string, featureRefName string) (*github.Reference, error) {
+	ref := "refs/heads/" + baseRefName
+	baseRef, _, err := b.GitService.GetRef(ctx, owner, repo, ref)
+	if err != nil {
+		return nil, err
+	}
+	return baseRef, nil
+}
+
+func (b *RefService) CreateRef(ctx context.Context, owner string, repo string, baseRefName string, featureRefName string) (*github.Reference, error) {
+	baseRef, err := b.GetRef(ctx, owner, repo, baseRefName, featureRefName)
+	if err != nil {
+		return nil, err
+	}
+	reference := &github.Reference{
+		Ref:    github.String("refs/heads/" + baseRefName),
+		Object: &github.GitObject{SHA: baseRef.Object.SHA},
+	}
+	newRef, _, err := b.GitService.CreateRef(ctx, owner, repo, reference)
+	if err != nil {
+		return nil, err
+	}
+	return newRef, nil
 }
