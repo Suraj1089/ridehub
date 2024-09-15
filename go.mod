@@ -5,7 +5,6 @@ go 1.22.3
 require github.com/google/go-github/v64 v64.0.0
 
 require (
-	github.com/caarlos0/env/v9 v9.0.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
